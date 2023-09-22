@@ -1,5 +1,6 @@
+#Импорт біблеотек
 from pygame import *
-
+#Матрица уровня
 level1 = [
     "r                                                                    .",
     "r                                                                    .",
@@ -19,8 +20,19 @@ level1 = [
     "r                r   l                       r   l                   .",
     "r                                                                    .",
     "----------------------------------------------------------------------"]
+#Розміри уровня
 level1_width = len(level1[0]) * 40
 level1_height = len(level1) * 40
+#Розміри вікна
+W = 1280
+H = 720
+#Создання вікна
+window = display.set_mode((W, H))
+display.set_caption("blocada")
+display.set_icon(image.load("images/key.png"))
+bg = transform.scale(image.load("images/bgr.png"), (W, H))
+#Малюєм фон
+window.blit(bg, (0, 0))
 
 """ЗВУКИ"""
 mixer.init()
@@ -30,7 +42,7 @@ k_coll = mixer.Sound('sounds/k_coll.wav')
 c_coll = mixer.Sound('sounds/c_coll.wav')
 lock = mixer.Sound('sounds/lock.wav')
 tp = mixer.Sound('sounds/teleport.ogg')
-click = mixer.Sound('sounds/click.wav')
+#click = mixer.Sound('sounds/click.wav')
 chest_snd = mixer.Sound('sounds/chest.wav')
 
 """ШРИФТИ І ТЕКСТ"""
@@ -95,7 +107,7 @@ class Button:
         self.text_size = text_size
         self.text_color = text_color
         self.text_image = font.Font('font/impact.ttf', text_size).render(text, True, text_color)
-
+    #Метод для відмальовки
     def draw(self, shift_x, shift_y):
         window.blit(self.image, (self.rect.x, self.rect.y))
         window.blit(self.text_image, (self.rect.x + shift_x, self.rect.y + shift_y))
@@ -135,3 +147,98 @@ def camera_config(camera, target_rect):
     t = min(0, t)  # Не виходимо за верхню межу
 
     return Rect(l, t, w, h)
+camera = Camera(camera_config, level1_width, level1_height)
+#Базовий спрайт
+class Settings(sprite.Sprite):
+    def __init__(self, x, y, w, h, speed, img):
+        super().__init__()
+
+        self.speed = speed
+        self.width = w
+        self.height = h 
+        self.image = transform.scale(image.load(img), (self.width, self.height))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+    #Відмальовування
+    def reset(self): 
+        window.blit(self.image, (self.rect.x, self.rect.y))
+
+class Player(Settings):
+    def update_rl(self):
+        keys = key.get_pressed()
+        if keys[K_a]:
+            self.rect.x -= self.speed
+        if keys[K_d]:
+            self.rect.x += self.speed 
+
+    def update_ws(self):
+        keys = key.get_pressed()
+        if keys[K_w]:
+            self.rect.y -= self.speed
+        if keys[K_s]:
+            self.rect.y += self.speed 
+
+def start_pos():
+    global hero, items
+    
+    hero = Player(300, 629, 50, 50, 5, hero_r)
+
+    items = sprite.Group()
+
+    platforms_lst = []
+    stairs_lst = []
+    coins_lst = []
+    blocks_l = []
+    blocks_r = []
+    x = 0
+    y = 0
+
+    #Рисовка уровня
+    for r in level1:
+        for c in r:
+            if c == "-":
+                r1 = Settings(x, y, 40, 40, 0, platform)
+                platforms_lst.append(r1)
+                items.add(r1)
+            if c == "/":
+                r2 = Settings(x, y - 40, 40, 180, 0, stairs)
+                stairs_lst.append(r2)
+                items.add(r2)
+            if c == "°":
+                r3 = Settings(x, y, 40, 40, 0, coin_img)
+                coins_lst.append(r3)
+                items.add(r3)
+            if c == "r":
+                r4 = Settings(x, y, 40, 40, 0, nothing)
+                blocks_r.append(r4)
+                items.add(r4)
+            if c == "l":
+                r5 = Settings(x, y, 40, 40, 0, nothing)
+                blocks_l.append(r5)
+                items.add(r5)
+            x += 40
+        
+        y += 40
+        x = 0
+    items.add(hero)
+    
+#Змінні для игри
+finish = False
+game = True
+
+start_pos()
+#Цикл
+while game:
+    time.delay(3)
+    window.blit(bg, (0, 0))
+    hero.update_rl()
+    camera.update(hero)
+    for i in items:
+        window.blit(i.image, camera.apply(i))
+    #Закриття гри
+    for e in event.get():
+        if e.type == QUIT:
+            game = False
+    #Оновлення екрану
+    display.update()
