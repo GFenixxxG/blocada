@@ -69,8 +69,8 @@ lose = font4.render('YOU LOSE!', True, (255, 0, 0), (245, 222, 179))
 pausa = font4.render('PAUSE', True, (255, 0, 0), (245, 222, 179))
 
 """КАРТИНКИ СПРАЙТІВ"""
-hero_l = "images/sprite1.png"
-hero_r = "images/sprite1_r.png"
+hero_l = "images/l_player.png"
+hero_r = "images/r_player.png"
 
 enemy_r = "images/cyborg.png"
 enemy_l = "images/cyborg_r.png"
@@ -163,29 +163,32 @@ class Settings(sprite.Sprite):
     #Відмальовування
     def reset(self): 
         window.blit(self.image, (self.rect.x, self.rect.y))
-
+#Клас для гравця
 class Player(Settings):
+    #Функція для руху вправо вліво
     def update_rl(self):
         keys = key.get_pressed()
         if keys[K_a]:
             self.rect.x -= self.speed
+            self.image = transform.scale(image.load("images/l_player.png"), (50, 50))
         if keys[K_d]:
-            self.rect.x += self.speed 
-
+            self.rect.x += self.speed
+            self.image = transform.scale(image.load("images/r_player.png"), (50, 50))
+    #Функція для руху верх вниз
     def update_ws(self):
         keys = key.get_pressed()
         if keys[K_w]:
             self.rect.y -= self.speed
         if keys[K_s]:
             self.rect.y += self.speed 
-
+#Функція для Стратовой позиції гравця і левела
 def start_pos():
-    global hero, items
+    global hero, items, platforms_lst, stairs_lst, coins_lst, blocks_l, blocks_r
     
-    hero = Player(300, 629, 50, 50, 5, hero_r)
+    hero = Player(300, 655, 50, 50, 5, hero_r)
 
     items = sprite.Group()
-
+    #списки
     platforms_lst = []
     stairs_lst = []
     coins_lst = []
@@ -222,10 +225,35 @@ def start_pos():
         y += 40
         x = 0
     items.add(hero)
-    
+
+points = 0  
 #Змінні для игри
 finish = False
 game = True
+
+def collides():
+    global points
+    for stair in stairs_lst:
+        if sprite.collide_rect(hero, stair):
+            hero.update_ws()
+            if hero.rect.y <= (stair.rect.y - 40):
+                hero.rect.y = stair.rect.y - 40
+            if hero.rect.y >= (stair.rect.y + 130):
+                hero.rect.y = stair.rect.y + 130
+
+    for r in blocks_r:
+        if sprite.collide_rect(hero, r):
+            hero.rect.x = r.rect.x + hero.width
+
+    for l in blocks_l:
+        if sprite.collide_rect(hero, l):
+            hero.rect.x = l.rect.x - hero.width - 20
+
+    for coin in coins_lst:
+        if sprite.collide_rect(hero, coin):
+            coins_lst.remove(coin)
+            items.remove(coin)
+            points += 1
 
 start_pos()
 #Цикл
@@ -240,5 +268,9 @@ while game:
     for e in event.get():
         if e.type == QUIT:
             game = False
+    window.blit(transform.scale(image.load(coin_img), (30, 30)), (10, 10))
+    coin_txt = font2.render(":" + str(points), 1, (255, 255, 255))
+    window.blit(coin_txt, (40, 5))
+    collides()
     #Оновлення екрану
     display.update()
