@@ -181,7 +181,7 @@ class Player(Settings):
             self.rect.y -= self.speed
         if keys[K_s]:
             self.rect.y += self.speed 
-
+#Класс для ворога
 class Enemy(Settings):
     def __init__(self, x, y, w, h, speed, img, side):
         super().__init__(x, y, w, h, speed, img)
@@ -197,9 +197,9 @@ class Enemy(Settings):
             self.rect.x -= self.speed
 
 
-#Функція для Стратовой позиції гравця і левела
+#Функція для Стратовой позиції гравця і левела і всіх обєктів
 def start_pos():
-    global hero, items, platforms_lst, stairs_lst, coins_lst, blocks_l, blocks_r, enemies
+    global hero, items, platforms_lst, stairs_lst, coins_lst, blocks_l, blocks_r, enemies, keys_lst
     
     hero = Player(300, 655, 50, 50, 5, hero_r)
 
@@ -215,14 +215,24 @@ def start_pos():
     enemies.add(enemy_4)
 
     items = sprite.Group()
+
     #списки
     platforms_lst = []
     stairs_lst = []
     coins_lst = []
     blocks_l = []
     blocks_r = []
+    keys_lst = []
     x = 0
     y = 0
+    #Сундук і ключ
+    chest = Settings(500, 150, 50, 50, 0, chest_close)
+    keyer = Settings(425, 490, 50, 25, 0, key_img) 
+    #Додавання в группу
+    chest.add(items)
+    keyer.add(items)
+    #Додавання список
+    keys_lst.append(keyer)
 
     #Рисовка уровня
     for r in level1:
@@ -257,9 +267,10 @@ points = 0
 #Змінні для игри
 finish = False
 game = True
-
+#Функція для колайдів
 def collides():
     global points
+    #Зіткнення з лесницой
     for stair in stairs_lst:    
         if sprite.collide_rect(hero, stair):
             hero.update_ws()
@@ -267,26 +278,31 @@ def collides():
                 hero.rect.y = stair.rect.y - 40
             if hero.rect.y >= (stair.rect.y + 130):
                 hero.rect.y = stair.rect.y + 130
-
+    #Зіткнення з невидимими блоками
     for r in blocks_r:
         if sprite.collide_rect(hero, r):
             hero.rect.x = r.rect.x + hero.width
 
         for en in sprite.spritecollide(r, enemies, False):
             en.side = "right"
-            
+    #Зіткнення з невидимими блоками
     for l in blocks_l:
         if sprite.collide_rect(hero, l):
             hero.rect.x = l.rect.x - hero.width - 20
 
         for en in sprite.spritecollide(l, enemies, False):
             en.side = "left"
-
+    #Зіткнення з монетой
     for coin in coins_lst:
         if sprite.collide_rect(hero, coin):
             coins_lst.remove(coin)
             items.remove(coin)
             points += 1
+    #Зіткнення з ключем
+    for keys in keys_lst:
+        if sprite.collide_rect(hero, keys):
+            keys_lst.remove(keys)
+            items.remove(keys)
 
 start_pos()
 #Цикл
